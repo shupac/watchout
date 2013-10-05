@@ -18,19 +18,70 @@ var level = 1;
 // Helper functions.
 var genEnemyLocations = function (){
   var enemyArr = [];
-  for(var i = 0; i < currentNumEnemies+1; i++) {
-    enemyArr.push({x:Math.random()*(width-enemyRadius*2)+enemyRadius,
-      y:Math.random()*(height-enemyRadius*2)+enemyRadius});
+  for(var i = 0; i < currentNumEnemies; i++) {
+    enemyArr.push({x:Math.random()*(width-2*enemyRadius)+enemyRadius, y:Math.random()*(height-2*enemyRadius)+enemyRadius});
   }
   return enemyArr;
 };
 
-var moveEnemies = function() {
-  d3.selectAll('circle.enemy').data(genEnemyLocations())
-  .transition().duration(currentMoveInt)
-    .delay(function(d) {return Math.random()*currentMoveInt;})
-    .tween('custom', collisionTween);
-  setTimeout(moveEnemies, currentMoveInt);
+
+// combine into update
+
+var updateEnemies = function () {
+  var startData = genEnemyLocations();
+  var newData = genEnemyLocations();
+  var enemies = d3Canvas.selectAll('circle.enemy').data(newData);
+
+
+  // adds new enemies (on level up or game init)
+  enemies
+    .enter().append('circle')
+    .attr('class', 'enemy')
+    .attr('r', enemyRadius)
+    .attr('cy', function (d, i) { return startData[i].y;})
+    .attr('cx', function (d, i) { return startData[i].x;})
+    .style('fill', 'red');
+
+  // moves enemies
+  enemies.transition().duration(currentMoveInt).ease('linear').tween('custom', collisionTween);
+
+  setTimeout(updateEnemies, currentMoveInt);
+};
+
+// var moveEnemies = function() {
+//   d3.selectAll('circle.enemy').data(genEnemyLocations())
+//   .transition().duration(currentMoveInt)
+//   .ease('linear')
+//     //.delay(function(d) {return Math.random()*currentMoveInt;})
+//     .tween('custom', collisionTween);
+//   setTimeout(moveEnemies, currentMoveInt*1.2);
+// };
+
+// var addNewEnemies = function() {
+//   d3Canvas.selectAll('circle').data(genEnemyLocations)
+//   .enter().append('circle')
+//   .attr('class', 'enemy')
+//   .attr('r', enemyRadius)
+//   .attr('cy', function (d) { return d.y;})
+//   .attr('cx', function (d) { return d.x;})
+//   .style('fill', 'red');
+//   moveEnemies();
+// };
+
+
+
+
+
+var collisionTween = function(endPoint) {
+  var enemy = d3.select(this);
+  var startX = parseFloat(enemy.attr("cx"));
+  var startY = parseFloat(enemy.attr("cy"));
+
+  return function (t) {
+    checkCollision(enemy);
+    enemy.attr('cx', startX + (endPoint.x - startX)*t);
+    enemy.attr('cy', startY + (endPoint.y - startY)*t);
+  };
 };
 
 var checkCollision = function(enemy) {
@@ -46,7 +97,7 @@ var checkCollision = function(enemy) {
     d3.select('.level').text(level);
     currentMoveInt = startingMoveInt;
     currentNumEnemies = startingNumEnemies;
-    removeEnemies();
+    d3Canvas.selectAll('circle.enemy').data([]).exit().remove();
   }
 };
 
@@ -61,11 +112,6 @@ var playerHitFlash = function() {
 
 var levelUpFlash = function(deEl) {
   var currentColor = deEl.style('stroke');
-  var currentRed = currentColor[1];
-  var currentGreen = currentColor[2];
-  var newColor = "#" + (1+currentRed) + (currentGreen-1) + 0;
-  deEl.transition().
-  style('stroke', newColor);
 };
 
 var incrementScore = function() {
@@ -77,41 +123,14 @@ var incrementScore = function() {
   }
 
   if(score > 25*Math.pow(level, 1.7)) {
-    currentMoveInt *= 0.9;
-    currentNumEnemies += 2;
-    addNewEnemies();
+    currentMoveInt *= 0.95;
+    currentNumEnemies = startingNumEnemies + 2*(level-1);
+    console.log(currentNumEnemies);
     levelUpFlash(d3.selectAll('circle.boundary'));
     level++;
     d3.select('.level').text(level);
   }
   setTimeout(incrementScore, Math.sqrt(currentMoveInt)*scoreMultiplier/(currentNumEnemies));
-};
-
-var collisionTween = function(endPoint) {
-  var enemy = d3.select(this);
-  var startX = parseFloat(enemy.attr("cx"));
-  var startY = parseFloat(enemy.attr("cy"));
-
-  return function (t) {
-    checkCollision(enemy);
-    enemy.attr('cx', startX + (endPoint.x - startX)*t);
-    enemy.attr('cy', startY + (endPoint.y - startY)*t);
-  };
-};
-
-var addNewEnemies = function() {
-  d3Canvas.selectAll('circle').data(genEnemyLocations)
-  .enter().append('circle')
-  .attr('class', 'enemy')
-  .attr('r', enemyRadius)
-  .attr('cy', function (d) { return d.y;})
-  .attr('cx', function (d) { return d.x;})
-  .style('fill', 'red');
-  moveEnemies();
-};
-
-var removeEnemies = function() {
-  d3Canvas.selectAll("circle.enemy").data(genEnemyLocations).exit().remove();
 };
 
 // Initialize game.
@@ -152,8 +171,7 @@ d3Canvas.on('mousemove', function(clickEvent) {
 
 // Make everything move!
 
-addNewEnemies();
-moveEnemies();
+updateEnemies();
 incrementScore();
 
 
