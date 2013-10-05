@@ -6,13 +6,11 @@ body {
 .container {
   color: #0C0;
   text-align: center;
-  margin-top: 100px;
+  margin-top: 50px;
 }
 
 svg {
   cursor:none;
-  border: 5px solid #0C0;
-  border-radius: 20px;
 }
 
 span {

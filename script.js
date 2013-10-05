@@ -1,9 +1,12 @@
 // Global variables.
 var width = 700;
-var height = 500;
+var height = 700;
 var numEnemies = 20;
-var enemyRadius = 7;
-var moveInt = 1000;
+var enemyRadius = 8;
+var moveInt = 1800;
+var score = 0;
+var highScore = 0;
+var boundaryFactor = Math.sqrt(2);
 
 // Helper functions.
 var genEnemyLocations = function (){
@@ -19,25 +22,31 @@ var moveEnemies = function() {
   enemies.data(genEnemyLocations)
   .transition().duration(moveInt)
     .delay(function(d) {return Math.random()*moveInt;})
-    .ease('linear').attr('cy', function (d) { return d.y;})
-  .attr('cx', function (d) { return d.x;});
+    .tween('custom', collisionTween);
 };
 
-var checkCollision = function() {
+var checkCollision = function(enemy) {
   var playerX = player.datum().x + enemyRadius;
   var playerY = player.datum().y + enemyRadius;
 
-  enemies.each(function(d) {
-    var enemyX = this.getAttribute("cx");
-    var enemyY = this.getAttribute("cy");
-    if(Math.pow(enemyX - playerX,2) + Math.pow(enemyY - playerY, 2) < 4*enemyRadius*enemyRadius) {
-      console.log('collision');
-    }
-  });
+  var enemyX = parseFloat(enemy.attr("cx"));
+  var enemyY = parseFloat(enemy.attr("cy"));
+  if(Math.pow(enemyX - playerX,2) + Math.pow(enemyY - playerY, 2) < 4*enemyRadius*enemyRadius) {
+    score = 0;
+  }
+
 };
 
 var collisionTween = function(endPoint) {
   var enemy = d3.select(this);
+  var startX = parseFloat(enemy.attr("cx"));
+  var startY = parseFloat(enemy.attr("cy"));
+
+  return function (t) {
+    checkCollision(enemy);
+    enemy.attr('cx', startX + (endPoint.x - startX)*t);
+    enemy.attr('cy', startY + (endPoint.y - startY)*t);
+  };
 };
 
 
@@ -46,6 +55,13 @@ var d3Canvas = d3.select('.container')
   .append('svg')
   .attr('width', width)
   .attr('height', height);
+
+var boundary = d3Canvas.append('circle')
+  .attr('r', enemyRadius + height/(2*boundaryFactor))
+  .attr('cx', width/2)
+  .attr('cy', height/2)
+  .style('stroke', '#0C0')
+  .style('stroke-width', 7);
 
 var enemies = d3Canvas.selectAll('circle').data(genEnemyLocations)
   .enter()
@@ -56,7 +72,14 @@ var enemies = d3Canvas.selectAll('circle').data(genEnemyLocations)
   .style('fill', 'red');
 
 var enemyMover = setInterval(moveEnemies, moveInt);
-var collisionTimer = setInterval(checkCollision, 20);
+var scoreTimer = setInterval(function() {
+  score++;
+  d3.select('.score').text(score);
+  if (score > highScore) {
+    highScore = score;
+    d3.select('.highScore').text(highScore);
+  }
+}, 25);
 
 
 var player = d3Canvas.selectAll('rect').data([{x:width/2, y:height/2}])
@@ -72,11 +95,14 @@ var player = d3Canvas.selectAll('rect').data([{x:width/2, y:height/2}])
 
 d3Canvas.on('mousemove', function(clickEvent) {
   var coordinates = d3.mouse(this);
-  player.data([{x:coordinates[0], y:coordinates[1]}])
-        .attr('x', function (d) { return d.x;})
-        .attr('y', function (d) { return d.y;});
+  var mX = coordinates[0] - width/2 + enemyRadius;
+  var mY = coordinates[1] - height/2 + enemyRadius;
+  if(mX * mX + mY * mY < height*height/(4*boundaryFactor*boundaryFactor)) {
+    player.data([{x:coordinates[0], y:coordinates[1]}])
+          .attr('x', function (d) { return d.x;})
+          .attr('y', function (d) { return d.y;});
+  }
 });
-
 
 
 
