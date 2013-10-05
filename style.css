@@ -1,5 +1,13 @@
-.enemy {
-  border:10px solid red;
-  border-radius: 10px;
-  position:absolute;
+body {
+  background-color: black;
+}
+
+.container {
+  text-align: center;
+  margin-top: 150px;
+}
+
+svg {
+  border: 5px solid lightgreen;
+  border-radius: 20px;
 }
