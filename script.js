@@ -11,12 +11,17 @@ var genEnemies = function (){
   return enemyArr;
 };
 
-var enemyArr = genEnemies();
-d3.select('body')
-  .selectAll('.enemy')
-  .data(enemyArr)
+var enemyData = genEnemies();
+var d3Canvas = d3.select('body')
+  .append('svg')
+  .attr('width', width)
+  .attr('height', height);
+
+var enemies = d3Canvas.selectAll('circle').data(enemyData)
   .enter()
-  .append('div')
-  .attr('class','enemy')
-  .style('top', function (d) { return d.y + 'px';})
-  .style('left', function (d) { return d.x + 'px';});
+  .append('circle')
+  .attr('r', 10)
+  .attr('cy', function (d) { return d.y;})
+  .attr('cx', function (d) { return d.x;})
+  .style('fill', 'red');
+
