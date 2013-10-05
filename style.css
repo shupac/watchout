@@ -3,16 +3,26 @@ body {
   font-family: courier;
 }
 
+.game {
+  text-align: center;
+  margin: 0 auto;
+}
+
 .container {
   color: #0C0;
   text-align: center;
   margin-top: 50px;
+  position: relative;
 }
 
 svg {
   cursor:none;
 }
 
-span {
+span span {
   color: red;
+}
+
+.scoreText {
+  margin: 0 30px;
 }
