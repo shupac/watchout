@@ -17,10 +17,29 @@ var genEnemyLocations = function (){
 
 var moveEnemies = function() {
   enemies.data(genEnemyLocations)
-  .transition().duration(moveInt).delay(function(d) {return Math.random()*moveInt;})
-  .ease('linear').attr('cy', function (d) { return d.y;})
+  .transition().duration(moveInt)
+    .delay(function(d) {return Math.random()*moveInt;})
+    .ease('linear').attr('cy', function (d) { return d.y;})
   .attr('cx', function (d) { return d.x;});
 };
+
+var checkCollision = function() {
+  var playerX = player.datum().x + enemyRadius;
+  var playerY = player.datum().y + enemyRadius;
+
+  enemies.each(function(d) {
+    var enemyX = this.getAttribute("cx");
+    var enemyY = this.getAttribute("cy");
+    if(Math.pow(enemyX - playerX,2) + Math.pow(enemyY - playerY, 2) < 4*enemyRadius*enemyRadius) {
+      console.log('collision');
+    }
+  });
+};
+
+var collisionTween = function(endPoint) {
+  var enemy = d3.select(this);
+};
+
 
 // Initialize game.
 var d3Canvas = d3.select('.container')
@@ -37,6 +56,8 @@ var enemies = d3Canvas.selectAll('circle').data(genEnemyLocations)
   .style('fill', 'red');
 
 var enemyMover = setInterval(moveEnemies, moveInt);
+var collisionTimer = setInterval(checkCollision, 20);
+
 
 var player = d3Canvas.selectAll('rect').data([{x:width/2, y:height/2}])
   .enter()
@@ -55,7 +76,6 @@ d3Canvas.on('mousemove', function(clickEvent) {
         .attr('x', function (d) { return d.x;})
         .attr('y', function (d) { return d.y;});
 });
-
 
 
 
