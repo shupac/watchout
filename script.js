@@ -14,6 +14,7 @@ var highScore = 0;
 var currentNumEnemies = startingNumEnemies;
 var currentMoveInt = startingMoveInt;
 var level = 1;
+var newRecord = false;
 
 // Helper functions.
 var genEnemyLocations = function (){
@@ -23,9 +24,6 @@ var genEnemyLocations = function (){
   }
   return enemyArr;
 };
-
-
-// combine into update
 
 var updateEnemies = function () {
   var startData = genEnemyLocations();
@@ -48,29 +46,6 @@ var updateEnemies = function () {
   setTimeout(updateEnemies, currentMoveInt);
 };
 
-// var moveEnemies = function() {
-//   d3.selectAll('circle.enemy').data(genEnemyLocations())
-//   .transition().duration(currentMoveInt)
-//   .ease('linear')
-//     //.delay(function(d) {return Math.random()*currentMoveInt;})
-//     .tween('custom', collisionTween);
-//   setTimeout(moveEnemies, currentMoveInt*1.2);
-// };
-
-// var addNewEnemies = function() {
-//   d3Canvas.selectAll('circle').data(genEnemyLocations)
-//   .enter().append('circle')
-//   .attr('class', 'enemy')
-//   .attr('r', enemyRadius)
-//   .attr('cy', function (d) { return d.y;})
-//   .attr('cx', function (d) { return d.x;})
-//   .style('fill', 'red');
-//   moveEnemies();
-// };
-
-
-
-
 
 var collisionTween = function(endPoint) {
   var enemy = d3.select(this);
@@ -91,12 +66,13 @@ var checkCollision = function(enemy) {
   var enemyX = parseFloat(enemy.attr("cx"));
   var enemyY = parseFloat(enemy.attr("cy"));
   if(Math.pow(enemyX - playerX,2) + Math.pow(enemyY - playerY, 2) < 4*enemyRadius*enemyRadius) {
-    score = 0;
     playerHitFlash();
+    score = 0;
     level = 1;
-    d3.select('.level').text(level);
+    newRecord = false;
     currentMoveInt = startingMoveInt;
     currentNumEnemies = startingNumEnemies;
+    d3.select('.level').text(level);
     d3Canvas.selectAll('circle.enemy').data([]).exit().remove();
   }
 };
@@ -110,8 +86,9 @@ var playerHitFlash = function() {
   setTimeout(function() {player.style('fill', '#0C0');}, flashSpeed*5);
 };
 
-var levelUpFlash = function(deEl) {
-  var currentColor = deEl.style('stroke');
+var flashText = function(text) {
+  msgText.text(text).attr({opacity: 1, 'font-size': 30});
+  msgText.transition().duration(500).ease('linear').attr({opacity: 0, 'font-size': 50});
 };
 
 var incrementScore = function() {
@@ -119,31 +96,50 @@ var incrementScore = function() {
   d3.select('.score').text(score);
   if (score > highScore) {
     highScore = score;
+    if (!newRecord) {
+      newRecord = true;
+      if (score > 10) {
+        flashText("NEW HIGH SCORE!!!");
+      }
+    }
     d3.select('.highScore').text(highScore);
   }
 
   if(score > 25*Math.pow(level, 1.7)) {
     currentMoveInt *= 0.95;
     currentNumEnemies = startingNumEnemies + 2*(level-1);
-    console.log(currentNumEnemies);
-    levelUpFlash(d3.selectAll('circle.boundary'));
     level++;
+    flashText('LEVEL UP');
     d3.select('.level').text(level);
+  }
+
+  if (score % 100 === 0) {
+    flashText(score + " POINTS!");
   }
   setTimeout(incrementScore, Math.sqrt(currentMoveInt)*scoreMultiplier/(currentNumEnemies));
 };
 
 // Initialize game.
-var d3Canvas = d3.select('.container')
-  .append('svg')
+var d3Canvas = d3.select('svg')
   .attr('width', width)
   .attr('height', height);
+
+var msgText = d3.select('text')
+                   .attr({
+                     x: width/2,
+                     y: height/2,
+                     'text-anchor': 'middle',
+                     'font-family': 'courier',
+                     fill: '#0C0',
+                     opacity: 0
+                    });
 
 var boundary = d3Canvas.append('circle')
   .attr('r', enemyRadius + height/(2*boundaryFactor))
   .attr('cx', width/2)
   .attr('cy', height/2)
   .attr('class', 'boundary')
+  .attr('fill', 'none')
   .style('stroke', '#0C0')
   .style('stroke-width', 7);
 
